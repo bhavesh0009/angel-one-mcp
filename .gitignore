@@ -98,4 +98,9 @@ dmypy.json
 # Personal notes and TODO files
 TODO.md
 NOTES.md
-notes.txt 
+notes.txt
+
+# Documentation files (internal use only)
+MCP_server_for_client_developer.md
+MCP_server_for_server_developers.md
+smartapi_python_documentation.md 
