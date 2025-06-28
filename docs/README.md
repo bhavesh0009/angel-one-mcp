@@ -15,6 +15,29 @@ A Model Context Protocol (MCP) server and client that provides natural language 
 - **Safety Features**: Built-in safety limits and dry-run mode for testing
 - **Error Handling**: Detailed error context for troubleshooting
 
+## 📁 Project Structure
+
+```
+AngelOne/
+├── src/                                    # Source code
+│   ├── angel_one_mcp_server.py            # MCP Server implementation
+│   └── angel_one_mcp_client.py            # MCP Client with Gemini AI
+├── config/                                 # Configuration files
+│   ├── config.yaml                        # Settings (safe to commit)
+│   └── config_template.txt                # Environment variable template
+├── scripts/                               # Scripts and utilities
+│   ├── quick_start.sh                     # Automated setup script
+│   └── test_setup.py                      # Setup verification script
+├── docs/                                  # Documentation
+│   ├── README.md                          # This file
+│   ├── smartapi_python_documentation.md  # Angel One API docs
+│   └── MCP_*.md                           # MCP implementation guides
+├── logs/                                  # Application logs
+├── .env                                   # Your secrets (never commit!)
+├── .env.example                           # Environment template
+└── requirements.txt                       # Python dependencies
+```
+
 ## 📋 Prerequisites
 
 1. **Angel One Account**: You need an active Angel One trading account
@@ -31,14 +54,19 @@ A Model Context Protocol (MCP) server and client that provides natural language 
 mkdir angel-one-mcp
 cd angel-one-mcp
 
-# Copy the files: angel_one_mcp_server.py, angel_one_mcp_client.py, requirements.txt
+# Copy the project structure with organized folders:
+# src/ - Contains angel_one_mcp_server.py and angel_one_mcp_client.py
+# config/ - Contains config.yaml and config_template.txt
+# scripts/ - Contains quick_start.sh and test_setup.py
+# docs/ - Contains documentation files
+# requirements.txt - In root directory
 ```
 
 ### 2. Quick Setup (Recommended)
 
 ```bash
 # Run the automated setup script
-./quick_start.sh
+bash scripts/quick_start.sh
 ```
 
 This will:
@@ -99,7 +127,7 @@ ANGEL_ONE_TOTP_SECRET=your_totp_secret_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-#### **Settings (config.yaml file)**
+#### **Settings (config/config.yaml file)**
 
 Contains non-secret configurations - **safe to commit to git**:
 
@@ -146,7 +174,7 @@ venv\Scripts\activate     # Windows
 source venv/Scripts/activate # bash
 
 # Start the assistant
-python angel_one_mcp_client.py angel_one_mcp_server.py
+python src/angel_one_mcp_client.py src/angel_one_mcp_server.py
 ```
 
 ### Example Conversations
@@ -205,7 +233,7 @@ python angel_one_mcp_client.py angel_one_mcp_server.py
 
 ## ⚙️ Configuration Options
 
-### AI Model Settings (config.yaml)
+### AI Model Settings (config/config.yaml)
 
 ```yaml
 ai:
@@ -216,7 +244,7 @@ ai:
   temperature: 0.1
 ```
 
-### Safety Settings (config.yaml)
+### Safety Settings (config/config.yaml)
 
 ```yaml
 trading:
@@ -228,8 +256,8 @@ trading:
 
 ### Testing vs Live Trading
 
-- **Testing Mode**: Set `dry_run_mode: true` in config.yaml - orders will be simulated
-- **Live Trading**: Set `dry_run_mode: false` in config.yaml - orders will be placed for real
+- **Testing Mode**: Set `dry_run_mode: true` in config/config.yaml - orders will be simulated
+- **Live Trading**: Set `dry_run_mode: false` in config/config.yaml - orders will be placed for real
 
 ⚠️ **Always test with `dry_run_mode: true` first!**
 
@@ -239,8 +267,8 @@ trading:
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Gemini AI     │◄──►│  MCP Client      │◄──►│  MCP Server     │
 │                 │    │                  │    │                 │
-│ Natural Language│    │ angel_one_mcp_   │    │ angel_one_mcp_  │
-│ Processing      │    │ client.py        │    │ server.py       │
+│ Natural Language│    │ src/angel_one_   │    │ src/angel_one_  │
+│ Processing      │    │ mcp_client.py    │    │ mcp_server.py   │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
                                                          │
                                                          ▼

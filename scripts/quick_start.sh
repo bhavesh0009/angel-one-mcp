@@ -69,9 +69,9 @@ if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
         cp .env.example .env
         echo "✅ .env file created from .env.example!"
-    elif [ -f "config_template.txt" ]; then
-        cp config_template.txt .env
-        echo "✅ .env file created from config_template.txt!"
+    elif [ -f "config/config_template.txt" ]; then
+        cp config/config_template.txt .env
+        echo "✅ .env file created from config/config_template.txt!"
     else
         echo "❌ Template files not found. Creating basic .env file..."
         cat > .env << 'EOF'
@@ -100,17 +100,17 @@ fi
 
 echo ""
 echo "🧪 Running setup test..."
-$PYTHON_CMD test_setup.py
+$PYTHON_CMD scripts/test_setup.py
 
 echo ""
 echo "🎉 Setup complete!"
 echo ""
 echo "📖 Next steps:"
 echo "   1. Edit the .env file with your actual SECRET credentials"
-echo "   2. Optionally edit config.yaml for model settings and trading limits"
-echo "   3. Run the test again: $PYTHON_CMD test_setup.py"
+echo "   2. Optionally edit config/config.yaml for model settings and trading limits"
+echo "   3. Run the test again: $PYTHON_CMD scripts/test_setup.py"
 echo "   4. Activate virtual environment: source venv/bin/activate (Linux/Mac) or venv\\Scripts\\activate (Windows)"
-echo "   5. Start the trading assistant: $PYTHON_CMD angel_one_mcp_client.py angel_one_mcp_server.py"
+echo "   5. Start the trading assistant: $PYTHON_CMD src/angel_one_mcp_client.py src/angel_one_mcp_server.py"
 echo ""
 echo "📚 For detailed instructions, see README.md"
 echo ""

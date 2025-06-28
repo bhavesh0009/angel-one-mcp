@@ -101,6 +101,6 @@ NOTES.md
 notes.txt
 
 # Documentation files (internal use only)
-MCP_server_for_client_developer.md
-MCP_server_for_server_developers.md
-smartapi_python_documentation.md 
+docs/MCP_server_for_client_developer.md
+docs/MCP_server_for_server_developers.md
+docs/smartapi_python_documentation.md 

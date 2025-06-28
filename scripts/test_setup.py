@@ -123,11 +123,11 @@ def test_configuration():
     print("\n⚙️  Testing Configuration...")
     
     try:
-        if not os.path.exists('config.yaml'):
-            print("   ⚠️  config.yaml not found - using defaults")
+        if not os.path.exists('config/config.yaml'):
+            print("   ⚠️  config/config.yaml not found - using defaults")
             return True
         
-        with open('config.yaml', 'r') as f:
+        with open('config/config.yaml', 'r') as f:
             config = yaml.safe_load(f)
         
         # Check essential config sections
@@ -161,10 +161,10 @@ def test_file_structure():
     print("\n📁 Testing File Structure...")
     
     required_files = [
-        ("angel_one_mcp_server.py", "MCP Server"),
-        ("angel_one_mcp_client.py", "MCP Client"), 
+        ("src/angel_one_mcp_server.py", "MCP Server"),
+        ("src/angel_one_mcp_client.py", "MCP Client"), 
         ("requirements.txt", "Dependencies list"),
-        ("config.yaml", "Configuration file"),
+        ("config/config.yaml", "Configuration file"),
         (".env", "Environment variables (should be created by you)")
     ]
     
@@ -180,9 +180,9 @@ def test_file_structure():
     if missing_files:
         if ".env" in missing_files:
             print("\n   📝 To create .env file, copy from config_template.txt:")
-            print("   cp config_template.txt .env")
+            print("   cp config/config_template.txt .env")
             print("\n   Then edit the .env file with your actual credentials.")
-            print("   Non-secret configurations are in config.yaml")
+            print("   Non-secret configurations are in config/config.yaml")
         return False
     
     print("   ✅ All required files present!")
@@ -225,7 +225,7 @@ def main():
         print("\n✅ Your setup is ready!")
         print("\n🚀 To start the trading assistant:")
         print("   1. Activate virtual environment: source venv/bin/activate")
-        print("   2. Run: python angel_one_mcp_client.py angel_one_mcp_server.py")
+        print("   2. Run: python src/angel_one_mcp_client.py src/angel_one_mcp_server.py")
     else:
         print(f"⚠️  {passed}/{total} tests passed")
         print("\n❌ Please fix the issues above before proceeding")

@@ -24,10 +24,10 @@ load_dotenv()
 def load_config() -> Dict[str, Any]:
     """Load configuration from config.yaml"""
     try:
-        with open('config.yaml', 'r') as f:
+        with open('config/config.yaml', 'r') as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
-        print("⚠️  config.yaml not found, using default configuration")
+        print("⚠️  config/config.yaml not found, using default configuration")
         return {
             'ai': {
                 'provider': 'gemini',
