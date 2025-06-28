@@ -1,0 +1,38 @@
+# Angel One MCP Trading Assistant Configuration
+# Non-secret configurations - safe to commit to git
+
+# AI Model Configuration
+ai:
+  provider: "gemini"  # Options: gemini, anthropic, openai
+  model: "gemini-2.5-flash"  # Gemini model to use
+  max_tokens: 100000
+  temperature: 0.1
+
+# Trading Safety Configuration
+trading:
+  max_order_quantity: 10000
+  dry_run_mode: false  # Set to false for live trading
+  default_product_type: "INTRADAY"  # INTRADAY, DELIVERY, CARRYFORWARD
+  default_exchange: "NSE"  # NSE, BSE, NFO, MCX
+
+# Logging Configuration  
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "trading_assistant.log"
+
+# API Configuration
+api:
+  request_timeout: 30
+  max_retries: 3
+  retry_delay: 1
+
+# Market Data Configuration
+market_data:
+  default_interval: "ONE_MINUTE"  # ONE_MINUTE, FIVE_MINUTE, etc.
+  max_candles: 1000
+
+# Angel One Specific Settings
+angel_one:
+  base_url: "https://apiconnect.angelbroking.com"
+  user_agent: "AngelOneMCPClient/1.0" 

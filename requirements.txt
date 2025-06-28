@@ -1,0 +1,26 @@
+# MCP (Model Context Protocol) SDK
+mcp>=1.2.0
+
+# Angel One Smart API
+smartapi-python
+
+# Required for Angel One API
+pyotp
+logzero
+websocket-client
+pycryptodome
+
+# Google Gemini API
+google-generativeai
+
+# Environment variable management
+python-dotenv
+
+# Configuration file management
+pyyaml
+
+# HTTP client for API calls
+httpx
+
+# Async support
+asyncio 
