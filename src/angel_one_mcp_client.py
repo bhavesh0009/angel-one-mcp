@@ -31,7 +31,7 @@ def load_config() -> Dict[str, Any]:
         return {
             'ai': {
                 'provider': 'gemini',
-                'model': 'gemini-1.5-flash',
+                'model': 'gemini-2.0-flash-exp',
                 'max_tokens': 1000,
                 'temperature': 0.1
             },
@@ -229,6 +229,7 @@ Respond directly to the user's question. If you need to use tools, I will call t
 
             # Process response and handle tool calls
             final_text = []
+            tool_results = []  # Track tool results for chaining
             
             # Check if Gemini wants to use function calls
             if response.candidates[0].content.parts:
@@ -247,12 +248,95 @@ Respond directly to the user's question. If you need to use tools, I will call t
                         try:
                             # Execute tool call
                             result = await self.session.call_tool(tool_name, tool_args)
+                            tool_results.append({
+                                'name': tool_name,
+                                'args': tool_args,
+                                'result': result.content
+                            })
                             
                             # Add tool execution info to response
                             final_text.append(f"\n🔧 **Tool Executed**: {tool_name}")
                             final_text.append(f"📋 **Parameters**: {tool_args}")
                             
-                            # Get Gemini's interpretation of the tool result
+                            # CRITICAL: Handle tool chaining for price queries
+                            if tool_name == 'search_scrip' and any(keyword in query.lower() for keyword in ['price', 'current', 'trading at', 'quote', 'ltp']):
+                                print("🔗 Detected price query - automatically fetching current price...")
+                                
+                                # Parse search results to find equity symbol
+                                search_result_str = str(result.content)
+                                
+                                # Look for -EQ symbols in the search result
+                                import re
+                                # Try multiple regex patterns to match different response formats
+                                equity_matches = re.findall(r'"tradingsymbol":\s*"([^"]*-EQ)"[^}]*"symboltoken":\s*"([^"]*)"', search_result_str)
+                                if not equity_matches:
+                                    # Alternative format: look for -EQ symbols with different spacing/structure
+                                    equity_matches = re.findall(r'([A-Z]+-EQ)[^}]*symboltoken[^:]*:\s*([0-9]+)', search_result_str)
+                                if not equity_matches:
+                                    # Even more flexible pattern
+                                    equity_matches = re.findall(r'([A-Z]+-EQ).*?([0-9]{3,})', search_result_str)
+                                
+                                if equity_matches:
+                                    # Use the first equity symbol found
+                                    eq_symbol, eq_token = equity_matches[0]
+                                    exchange = tool_args.get('exchange', 'NSE')
+                                    
+                                    print(f"📈 Found equity symbol: {eq_symbol} (token: {eq_token})")
+                                    print(f"🔧 Auto-calling get_ltp_data for current price...")
+                                    
+                                    # Automatically call get_ltp_data
+                                    ltp_result = await self.session.call_tool('get_ltp_data', {
+                                        'exchange': exchange,
+                                        'tradingsymbol': eq_symbol,
+                                        'symboltoken': eq_token
+                                    })
+                                    
+                                    tool_results.append({
+                                        'name': 'get_ltp_data',
+                                        'args': {'exchange': exchange, 'tradingsymbol': eq_symbol, 'symboltoken': eq_token},
+                                        'result': ltp_result.content
+                                    })
+                                    
+                                    final_text.append(f"\n🔧 **Auto-executed**: get_ltp_data")
+                                    final_text.append(f"📋 **Parameters**: {{'exchange': '{exchange}', 'tradingsymbol': '{eq_symbol}', 'symboltoken': '{eq_token}'}}")
+                                    
+                                    # Now get comprehensive analysis of both results
+                                    comprehensive_prompt = f"""The user asked: "{query}"
+
+I executed two tools in sequence:
+
+1. search_scrip to find the stock:
+   Result: {str(result.content)}
+
+2. get_ltp_data to get current price:
+   Result: {str(ltp_result.content)}
+
+Please provide a clear, comprehensive response to the user that includes:
+- The current stock price
+- Any relevant market information from the LTP data
+- A direct answer to their question
+
+Keep it concise and user-friendly."""
+
+                                    comprehensive_response = self.model.generate_content(
+                                        comprehensive_prompt,
+                                        generation_config=genai.types.GenerationConfig(
+                                            max_output_tokens=self.config['ai']['max_tokens'],
+                                            temperature=self.config['ai']['temperature']
+                                        )
+                                    )
+
+                                    if comprehensive_response.candidates[0].content.parts:
+                                        for comp_part in comprehensive_response.candidates[0].content.parts:
+                                            if hasattr(comp_part, 'text') and comp_part.text:
+                                                final_text.append(f"\n📊 **Complete Analysis**: {comp_part.text}")
+                                    
+                                    continue  # Skip the normal follow-up since we handled it specially
+                                
+                                else:
+                                    print("⚠️ No equity symbols found in search results")
+                            
+                            # Standard follow-up for non-chained tools
                             follow_up_prompt = f"""Based on the tool execution result below, provide a clear analysis and explanation to the user:
 
 Tool: {tool_name}
@@ -333,51 +417,55 @@ Please interpret this data and provide insights relevant to the user's original 
                 print(f"\n❌ Error: {str(e)}")
 
     def show_help(self):
-        """Display help information with example queries"""
-        help_text = """
-📚 **Angel One Trading Assistant - Help Guide**
-
-🔍 **Market Data Queries:**
-   • "What is the current price of [STOCK_NAME]?"
-   • "Show me historical data for RELIANCE for last week"
-   • "Search for HDFC Bank stock details"
-   • "Get candlestick data for NIFTY"
-
-📊 **Portfolio & Account:**
-   • "Show me my current holdings"
-   • "What are my open positions?"
-   • "Show my account profile"
-   • "What are my RMS limits?"
-
-📈 **Market Analysis:**
-   • "Show me today's top gainers"
-   • "What are the biggest losers today?"
-   • "Get NIFTY option Greeks for current month"
-   • "What is the current put-call ratio?"
-
-📋 **Order Management:**
-   • "Show my order book"
-   • "Show my trade book"
-   • "Place a buy order for 10 shares of RELIANCE at market price"
-   • "Cancel order with ID [ORDER_ID]"
-
-⚡ **GTT & Advanced:**
-   • "Show my GTT rules"
-   • "Create a GTT rule for SBIN"
-   • "Convert my INTRADAY position to DELIVERY"
-
-⚠️  **Safety Notes:**
-   • All trading operations require careful consideration
-   • Verify all parameters before placing real orders
-   • Use DRY_RUN_MODE=true in .env for testing
-   • Market data is subject to exchange delays
-
-💡 **Tips:**
-   • Be specific with stock names (use full names or symbols)
-   • Include timeframes for historical data requests
-   • Check market hours for live data accuracy
-        """
-        print(help_text)
+        """Show help information and examples"""
+        print("\n📚 **Angel One Trading Assistant Help**")
+        print("="*50)
+        
+        print("\n💰 **Portfolio Queries:**")
+        print("   • 'Show me my holdings'")
+        print("   • 'What are my current positions?'")
+        print("   • 'How much margin do I have available?'")
+        print("   • 'Show my trading limits'")
+        
+        print("\n📊 **Market Data Queries:**")
+        print("   • 'What is the current price of Reliance?' (Auto-chained)")
+        print("   • 'Show me TCS stock price' (Auto-chained)")
+        print("   • 'Get historical data for SBIN'")
+        print("   • 'Show me top gainers today'")
+        print("   • 'What's the put-call ratio?'")
+        
+        print("\n🔍 **Stock Search:**")
+        print("   • 'Search for Tata Motors stock'")
+        print("   • 'Find HDFC Bank trading symbol'")
+        print("   • 'Get symbol details for ITC'")
+        
+        print("\n📈 **Trading Operations:**") 
+        print("   • 'Show my order book'")
+        print("   • 'Display my trade history'")
+        print("   • 'Cancel order [order_id]'")
+        print("   • Note: Order placement requires specific parameters")
+        
+        print("\n🎯 **Market Analysis:**")
+        print("   • 'Show me biggest losers today'")
+        print("   • 'Get option Greeks for NIFTY'")
+        print("   • 'Market sentiment analysis'")
+        
+        print("\n🔧 **Key Features:**")
+        print("   • ✅ **Auto-chaining**: Price queries automatically get live data")
+        print("   • ✅ **Smart symbol detection**: Finds equity symbols automatically")
+        print("   • ✅ **Comprehensive analysis**: Interprets all data for you")
+        print("   • ✅ **Safe trading**: Built-in risk management and confirmations")
+        
+        print("\n⚡ **Quick Commands:**")
+        print("   • Type 'quit' or 'q' to exit")
+        print("   • Type 'help' to see this menu again")
+        
+        print("\n💡 **Tips:**")
+        print("   • For stock prices, just mention the company name - auto-chaining handles the rest!")
+        print("   • All trading operations include safety checks and dry-run options")
+        print("   • Market data is real-time when markets are open")
+        
+        print("="*50)
 
     async def cleanup(self):
         """Clean up resources"""

@@ -135,7 +135,7 @@ Contains non-secret configurations - **safe to commit to git**:
 # AI Model Configuration
 ai:
   provider: "gemini"
-  model: "gemini-1.5-flash"  # or gemini-1.5-pro
+  model: "gemini-2.5-pro"  # Use current model version
   max_tokens: 1000
   temperature: 0.1
 
@@ -238,8 +238,8 @@ python src/angel_one_mcp_client.py src/angel_one_mcp_server.py
 ```yaml
 ai:
   provider: "gemini"
-  model: "gemini-1.5-flash"  # Fast and cost-effective
-  # model: "gemini-1.5-pro"   # More capable, higher cost
+  model: "gemini-2.0-flash-exp"  # Fast and cost-effective
+  # model: "gemini-2.5-pro"      # More capable, higher cost
   max_tokens: 1000
   temperature: 0.1
 ```

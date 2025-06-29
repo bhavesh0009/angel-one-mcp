@@ -108,7 +108,7 @@ def test_gemini_connection():
         
         # Just test if we can configure Gemini
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
         print("   ✅ Gemini client created successfully")
         
         print("   ℹ️  Note: Full API test will be done during actual usage")

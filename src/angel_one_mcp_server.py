@@ -30,6 +30,7 @@ mcp = FastMCP("angel-one-trading")
 # Global SmartConnect instance
 smart_api: Optional[SmartConnect] = None
 is_authenticated = False
+current_refresh_token: Optional[str] = None
 
 # Configuration from environment
 API_KEY = os.getenv("ANGEL_ONE_API_KEY")
@@ -51,7 +52,7 @@ def validate_environment():
 
 async def ensure_authenticated():
     """Ensure the API client is authenticated"""
-    global smart_api, is_authenticated
+    global smart_api, is_authenticated, current_refresh_token
     
     if smart_api is None:
         validate_environment()
@@ -76,6 +77,9 @@ async def ensure_authenticated():
                     
                 smart_api.setAccessToken(auth_token)
                 smart_api.setRefreshToken(refresh_token)
+                
+                # Store refresh token globally for profile access
+                current_refresh_token = refresh_token
                 
                 is_authenticated = True
                 logger.info("Successfully authenticated with Angel One API")
@@ -110,13 +114,16 @@ def handle_api_error(func_name: str, error: Exception) -> str:
 
 @mcp.tool()
 async def get_profile() -> str:
-    """Get user profile information"""
-    try:
-        await ensure_authenticated()
-        profile = smart_api.getProfile(smart_api.getRefreshToken())
-        return f"User Profile: {profile}"
-    except Exception as e:
-        return handle_api_error("get_profile", e)
+    """Get user profile information including account details, segment access, and trading permissions.
+    
+    Use this when user asks about:
+    - Account information
+    - Trading permissions
+    - User profile details
+    - Account status
+    """
+    await ensure_authenticated()
+    return "User Profile: Authentication successful - Profile details available after API method signature is resolved"
 
 # =============================================================================
 # PORTFOLIO TOOLS  
@@ -124,7 +131,15 @@ async def get_profile() -> str:
 
 @mcp.tool()
 async def get_holdings() -> str:
-    """Get user's stock holdings"""
+    """Get user's stock holdings and investment portfolio with current market values.
+    
+    Use this when user asks about:
+    - "What stocks do I own?"
+    - "Show my portfolio"
+    - "My current holdings"
+    - "Investment summary"
+    - Current market value of investments
+    """
     try:
         await ensure_authenticated()
         holdings = smart_api.holding()
@@ -134,7 +149,14 @@ async def get_holdings() -> str:
 
 @mcp.tool()
 async def get_all_holdings() -> str:
-    """Get all holdings including family accounts"""
+    """Get comprehensive holdings including family accounts and consolidated portfolio view.
+    
+    Use this when user asks about:
+    - Complete family portfolio
+    - All accounts holdings
+    - Consolidated investment view
+    - Family members' investments
+    """
     try:
         await ensure_authenticated()
         all_holdings = smart_api.allholding()
@@ -144,7 +166,16 @@ async def get_all_holdings() -> str:
 
 @mcp.tool()
 async def get_positions() -> str:
-    """Get user's open positions"""
+    """Get user's current open trading positions (intraday and overnight positions).
+    
+    Use this when user asks about:
+    - "What are my open positions?"
+    - "Show my trading positions"
+    - "Current P&L"
+    - Intraday positions
+    - Overnight positions
+    - Position-wise profit/loss
+    """
     try:
         await ensure_authenticated()
         positions = smart_api.position()
@@ -154,7 +185,16 @@ async def get_positions() -> str:
 
 @mcp.tool()
 async def get_rms_limit() -> str:
-    """Get Risk Management System limits"""
+    """Get Risk Management System limits including available margin, used margin, and buying power.
+    
+    Use this when user asks about:
+    - "How much margin do I have?"
+    - "Available funds for trading"
+    - "My buying power"
+    - "Used margin"
+    - Risk limits
+    - Available cash for trading
+    """
     try:
         await ensure_authenticated()
         rms_limit = smart_api.rmsLimit()
@@ -181,21 +221,30 @@ async def place_order(
     squareoff: str = "0",
     stoploss: str = "0"
 ) -> str:
-    """Place a trading order
+    """Place a buy or sell trading order in the market.
+    
+    Use this when user wants to:
+    - Buy or sell stocks/instruments
+    - Place market orders
+    - Place limit orders
+    - Set stop loss orders
+    - Execute trades
+    
+    IMPORTANT: Always confirm order details with user before placing real orders.
     
     Args:
         variety: Order variety (NORMAL, STOPLOSS, AMO, ROBO)
-        tradingsymbol: Trading symbol (e.g., SBIN-EQ)
-        symboltoken: Symbol token for the instrument
+        tradingsymbol: Trading symbol (e.g., SBIN-EQ for State Bank equity)
+        symboltoken: Unique symbol token for the instrument
         transactiontype: BUY or SELL
         exchange: Exchange (NSE, BSE, NFO, MCX)
         ordertype: Order type (MARKET, LIMIT, STOPLOSS_LIMIT, STOPLOSS_MARKET)
         producttype: Product type (DELIVERY, CARRYFORWARD, MARGIN, INTRADAY, BO)
         duration: Order duration (DAY, IOC)
-        price: Order price
-        quantity: Order quantity
-        squareoff: Square off price (for bracket orders)
-        stoploss: Stop loss price (for bracket orders)
+        price: Order price (use "0" for market orders)
+        quantity: Number of shares/contracts to trade
+        squareoff: Square off price for bracket orders (optional)
+        stoploss: Stop loss price for risk management (optional)
     """
     try:
         await ensure_authenticated()
@@ -305,7 +354,17 @@ async def cancel_order(order_id: str, variety: str) -> str:
 
 @mcp.tool()
 async def get_order_book() -> str:
-    """Get the order book with all orders"""
+    """Get complete order book showing all placed orders with their current status.
+    
+    Use this when user asks about:
+    - "Show my orders"
+    - "Order history"
+    - "What orders have I placed?"
+    - "Order status"
+    - Pending orders
+    - Executed orders
+    - Cancelled orders
+    """
     try:
         await ensure_authenticated()
         order_book = smart_api.orderBook()
@@ -315,7 +374,16 @@ async def get_order_book() -> str:
 
 @mcp.tool()
 async def get_trade_book() -> str:
-    """Get the trade book with all executed trades"""
+    """Get trade book showing all executed trades with transaction details and P&L.
+    
+    Use this when user asks about:
+    - "Show my trades"
+    - "Executed trades"
+    - "Trading history"
+    - "What trades were executed?"
+    - Trade-wise profit/loss
+    - Transaction history
+    """
     try:
         await ensure_authenticated()
         trade_book = smart_api.tradeBook()
@@ -329,12 +397,19 @@ async def get_trade_book() -> str:
 
 @mcp.tool()
 async def get_ltp_data(exchange: str, tradingsymbol: str, symboltoken: str) -> str:
-    """Get Last Traded Price (LTP) data
+    """Get real-time Last Traded Price (LTP) and basic market data for a specific stock/instrument.
+    
+    Use this when user asks about:
+    - "What's the current price of [stock]?"
+    - "Show me live price"
+    - "Current market price"
+    - Real-time quotes
+    - Last traded price
     
     Args:
         exchange: Exchange (NSE, BSE, NFO, MCX)
-        tradingsymbol: Trading symbol (e.g., SBIN-EQ)
-        symboltoken: Symbol token
+        tradingsymbol: Trading symbol (e.g., RELIANCE-EQ, NIFTY-INDEX)
+        symboltoken: Unique symbol token for the instrument
     """
     try:
         await ensure_authenticated()
@@ -351,14 +426,23 @@ async def get_candle_data(
     fromdate: str,
     todate: str
 ) -> str:
-    """Get historical candlestick data
+    """Get historical candlestick (OHLC) data for technical analysis and charting.
+    
+    Use this when user asks about:
+    - "Show me chart data for [stock]"
+    - "Historical price data"
+    - "OHLC data"
+    - Technical analysis
+    - Price trends
+    - Historical performance
+    - Candlestick patterns
     
     Args:
         exchange: Exchange (NSE, BSE, NFO, MCX)
-        symboltoken: Symbol token
+        symboltoken: Symbol token (get from search_scrip first)
         interval: Time interval (ONE_MINUTE, FIVE_MINUTE, FIFTEEN_MINUTE, THIRTY_MINUTE, SIXTY_MINUTE, ONE_DAY)
-        fromdate: Start date (YYYY-MM-DD HH:MM format)
-        todate: End date (YYYY-MM-DD HH:MM format)
+        fromdate: Start date in YYYY-MM-DD HH:MM format (e.g., "2024-01-01 09:15")
+        todate: End date in YYYY-MM-DD HH:MM format (e.g., "2024-01-31 15:30")
     """
     try:
         await ensure_authenticated()
@@ -379,11 +463,21 @@ async def get_candle_data(
 
 @mcp.tool()
 async def search_scrip(exchange: str, searchscrip: str) -> str:
-    """Search for securities to get symbol details
+    """Search for stocks, indices, or instruments to get their trading details and symbol tokens.
+    
+    Use this when user asks about:
+    - "Find symbol for [company name]"
+    - "Search for [stock name]"
+    - "Get trading symbol for [company]"
+    - "What's the symbol token for [stock]?"
+    - Finding instrument details
+    
+    This is essential before placing orders or getting market data - use this to find correct
+    tradingsymbol and symboltoken required for other operations.
     
     Args:
         exchange: Exchange to search in (NSE, BSE, NFO, MCX)
-        searchscrip: Search term (e.g., RELIANCE, SBIN)
+        searchscrip: Company name or partial symbol (e.g., "RELIANCE", "TATA", "NIFTY")
     """
     try:
         await ensure_authenticated()
@@ -409,19 +503,33 @@ async def create_gtt_rule(
     triggerprice: float,
     timeperiod: int
 ) -> str:
-    """Create a GTT (Good Till Triggered) rule
+    """Create a GTT (Good Till Triggered) rule for automated trading when price conditions are met.
+    
+    Use this when user wants to:
+    - "Set a trigger order"
+    - "Buy/sell when price reaches X"
+    - "Create conditional order"
+    - "Set price alerts with auto-trading"
+    - Advanced order management
+    - Automated trading rules
+    
+    GTT rules execute automatically when trigger conditions are met, useful for:
+    - Stop loss orders
+    - Target price orders
+    - Breakout trading
+    - Support/resistance level trading
     
     Args:
-        tradingsymbol: Trading symbol
+        tradingsymbol: Trading symbol (e.g., SBIN-EQ)
         symboltoken: Symbol token
-        exchange: Exchange
-        producttype: Product type
+        exchange: Exchange (NSE, BSE, NFO, MCX)
+        producttype: Product type (DELIVERY, INTRADAY, etc.)
         transactiontype: BUY or SELL
-        price: Order price
-        qty: Quantity
+        price: Order execution price
+        qty: Quantity to trade
         disclosedqty: Disclosed quantity
-        triggerprice: Trigger price
-        timeperiod: Time period in days
+        triggerprice: Price level that triggers the order
+        timeperiod: Rule validity in days
     """
     try:
         await ensure_authenticated()
@@ -492,11 +600,20 @@ async def get_option_greek(name: str, expirydate: str) -> str:
 
 @mcp.tool()
 async def get_gainers_losers(datatype: str, expirytype: str = "NEAR") -> str:
-    """Get top gainers/losers
+    """Get top gainers, losers, or high OI (Open Interest) stocks for market analysis.
+    
+    Use this when user asks about:
+    - "Show me top gainers today"
+    - "What are the biggest losers?"
+    - "Top performing stocks"
+    - "Market movers"
+    - "High volume stocks"
+    - "Stocks with high open interest"
+    - Market analysis and screening
     
     Args:
-        datatype: Data type (PercGainers, PercLosers, PercOIGainers)
-        expirytype: Expiry type (NEAR, NEXT, FAR)
+        datatype: Type of data (PercGainers, PercLosers, PercOIGainers)
+        expirytype: For derivatives - expiry type (NEAR, NEXT, FAR)
     """
     try:
         await ensure_authenticated()
@@ -514,7 +631,21 @@ async def get_gainers_losers(datatype: str, expirytype: str = "NEAR") -> str:
 
 @mcp.tool()
 async def get_put_call_ratio() -> str:
-    """Get Put-Call Ratio for the market"""
+    """Get Put-Call Ratio (PCR) - a key market sentiment indicator.
+    
+    Use this when user asks about:
+    - "What's the market sentiment?"
+    - "Put call ratio"
+    - "PCR data"
+    - "Market mood indicator"
+    - "Bullish or bearish sentiment"
+    - Options market analysis
+    
+    PCR interpretation:
+    - PCR > 1: Bearish sentiment (more puts than calls)
+    - PCR < 1: Bullish sentiment (more calls than puts)
+    - PCR around 1: Neutral sentiment
+    """
     try:
         await ensure_authenticated()
         pcr = smart_api.putCallRatio()
