@@ -249,6 +249,81 @@ Raw News → Text Preprocessing → Sentiment Scoring → Impact Assessment → 
 | **API Rate Limiting** | Request throttling | Prevent API abuse |
 | **Data Validation** | Input sanitization | Corrupt data protection |
 
+### **Capital Allocation Research**
+
+- **Kelly Criterion**: Optimal position sizing based on win rate/payoff
+- **Volatility Targeting**: Adjust position size based on stock volatility
+- **Drawdown Management**: Reduce size after consecutive losses
+
+---
+
+## 🎯 **Key Trading Considerations**
+
+### **1. Market Microstructure & Timing**
+
+```yaml
+trading_timing:
+  avoid_first_15_min: true  # Opening volatility
+  avoid_last_15_min: true   # Closing effects
+  lunch_hour_caution: 12:00-13:30  # Low volume period
+  optimal_windows:
+    - 10:00-11:30  # Post-opening stability
+    - 14:00-15:15  # Pre-close activity
+```
+
+### **2. Correlation & Portfolio Heat Map**
+
+- **Sector Clustering**: Don't trade multiple banks/IT stocks simultaneously
+- **Beta Correlation**: In high volatility, avoid multiple high-beta stocks
+- **Event Clustering**: Avoid trading before RBI meetings, budget announcements
+
+### **3. Trade Setup Quality Scoring**
+
+```yaml
+setup_quality_filters:
+  minimum_score: 7/10  # Below this = NO TRADE
+  confluence_factors:
+    - technical_signals: weight=40%
+    - volume_confirmation: weight=20%
+    - news_sentiment: weight=20%
+    - market_context: weight=20%
+```
+
+---
+
+## 🌡️ **Market Context & Regime Detection**
+
+### **Daily Market Assessment**
+
+```yaml
+market_context_check:
+  nifty_trend: trending_up | trending_down | sideways
+  volatility_regime: low(<15%) | normal(15-25%) | high(>25%)
+  market_breadth: bullish(>60%) | neutral(40-60%) | bearish(<40%)
+  sector_leadership: IT | Banking | Pharma | Auto | FMCG
+  
+trade_adjustments:
+  high_volatility:
+    - reduce_position_size: 50%
+    - wider_stops: +1%
+    - avoid_earnings_stocks: true
+  
+  sideways_market:
+    - prefer_mean_reversion: true
+    - avoid_breakout_trades: true
+    - target_range_bound_stocks: true
+```
+
+### **News & Event Risk Matrix**
+
+| Event Type | Action | Timeframe |
+|------------|--------|-----------|
+| **Earnings Announcement** | No new positions | Day of announcement |
+| **RBI Policy Meeting** | Reduce to 50% capital | Meeting day |
+| **Budget/Economic Data** | No trades 1 hour before/after | Event window |
+| **Global Market Crash** | Emergency stop all trading | Until stability |
+| **Circuit Breaker Hit** | No new trades | Rest of session |
+
 ---
 
 ## 🔄 **Operational Workflows**
@@ -446,6 +521,12 @@ flowchart TD
 - Strategy scalability assessment
 - Research paper/documentation
 
+### **Rapid Iteration Framework**
+
+- **Weekly Strategy Reviews**: What worked/didn't work
+- **Parameter Optimization**: A/B test different thresholds
+- **Market Adaptation**: Adjust based on changing market conditions
+
 ---
 
 ## 💡 **Key Technical Considerations (Research-Focused)**
@@ -490,6 +571,8 @@ flowchart TD
 - **Market Regime Adaptation**: Performance consistency across different market conditions
 - **Parameter Sensitivity**: Strategy robust to small parameter changes
 - **Backtest vs Live**: <20% performance degradation from backtest to live
+- **Daily Win Rate**: Track per-day success
+- **Strategy Decay**: Monitor if edge diminishes over time
 
 ### **Operational Research Goals**
 
@@ -500,199 +583,3 @@ flowchart TD
 - **Documentation**: Complete audit trail for all trading decisions
 
 ---
-
-## 🎯 **Critical Missing Trading Considerations**
-
-### **1. Market Microstructure & Timing**
-
-```yaml
-trading_timing:
-  avoid_first_15_min: true  # Opening volatility
-  avoid_last_15_min: true   # Closing effects
-  lunch_hour_caution: 12:00-13:30  # Low volume period
-  optimal_windows:
-    - 10:00-11:30  # Post-opening stability
-    - 14:00-15:15  # Pre-close activity
-```
-
-### **2. Correlation & Portfolio Heat Map**
-
-- **Sector Clustering**: Don't trade multiple banks/IT stocks simultaneously
-- **Beta Correlation**: In high volatility, avoid multiple high-beta stocks
-- **Event Clustering**: Avoid trading before RBI meetings, budget announcements
-
-### **3. Trade Setup Quality Scoring**
-
-```yaml
-setup_quality_filters:
-  minimum_score: 7/10  # Below this = NO TRADE
-  confluence_factors:
-    - technical_signals: weight=40%
-    - volume_confirmation: weight=20%
-    - news_sentiment: weight=20%
-    - market_context: weight=20%
-```
-
-## 📝 **Suggested Document Updates**
-
-### **Updated Core Objectives Section:**
-
-```markdown
-### **Core Objectives (Research-Focused Day Trading)**
-
-- Analyze a CONFIGURABLE universe of stocks with CONFIGURABLE capital
-- Focus on 15-minute to 4-hour timeframe strategies (no scalping)
-- **MANDATORY**: Close ALL positions before 3:15 PM daily
-- Implement "NO TRADE" as a primary option (selectivity over frequency)
-- Validate strategy effectiveness through rapid daily feedback loops
-- Achieve >70% win rate with average 1:2 risk-reward ratio
-```
-
-### **Updated Risk Management Framework:**
-
-```markdown
-### **Financial Guardrails (Configurable)**
-
-| Risk Parameter | Default | Config Location | Rationale |
-|----------------|---------|-----------------|-----------|
-| **Stock Universe Size** | 10 stocks | `config.universe_size` | Research focus |
-| **Starting Capital** | ₹10,000 | `config.capital` | Research validation |
-| **Max Position Size** | 20% of capital | `config.max_position_pct` | Diversification |
-| **Daily Loss Limit** | 3% of capital | `config.daily_loss_limit` | Capital preservation |
-| **Max Daily Trades** | 3 trades | `config.max_daily_trades` | Quality over quantity |
-| **Cooling Period** | 60 minutes | `config.cooling_period_min` | Emotional reset |
-| **EOD Closure Time** | 3:15 PM | `config.eod_closure_time` | Day trading mandate |
-| **No Trade Threshold** | Signal < 7/10 | `config.min_signal_score` | Selectivity enforcement |
-
-### **Enhanced Operational Guardrails**
-
-| Control | Implementation | Purpose |
-|---------|----------------|---------|
-| **Morning Setup Window** | 9:00-9:30 AM | System prep, no trades |
-| **Active Trading Hours** | 9:30 AM - 3:15 PM | Core trading window |
-| **Position Monitoring** | Every 5 minutes | Adequate for 15min+ timeframe |
-| **Mandatory EOD Closure** | 3:15 PM sharp | Research consistency |
-| **Weekend Position Check** | Ensure zero positions | Validation safety |
-```
-
-### **New Section: Market Context Analysis**
-
-```markdown
-## 🌡️ **Market Context & Regime Detection**
-
-### **Daily Market Assessment**
-```yaml
-market_context_check:
-  nifty_trend: trending_up | trending_down | sideways
-  volatility_regime: low(<15%) | normal(15-25%) | high(>25%)
-  market_breadth: bullish(>60%) | neutral(40-60%) | bearish(<40%)
-  sector_leadership: IT | Banking | Pharma | Auto | FMCG
-  
-trade_adjustments:
-  high_volatility:
-    - reduce_position_size: 50%
-    - wider_stops: +1%
-    - avoid_earnings_stocks: true
-  
-  sideways_market:
-    - prefer_mean_reversion: true
-    - avoid_breakout_trades: true
-    - target_range_bound_stocks: true
-```
-
-### **News & Event Risk Matrix**
-
-| Event Type | Action | Timeframe |
-|------------|--------|-----------|
-| **Earnings Announcement** | No new positions | Day of announcement |
-| **RBI Policy Meeting** | Reduce to 50% capital | Meeting day |
-| **Budget/Economic Data** | No trades 1 hour before/after | Event window |
-| **Global Market Crash** | Emergency stop all trading | Until stability |
-| **Circuit Breaker Hit** | No new trades | Rest of session |
-
-```
-
-### **Updated Decision Making Process:**
-```mermaid
-flowchart TD
-    A[Market Event/Signal] --> B{Market Context Check}
-    B -->|Favorable Context| C{Multi-Agent Analysis}
-    B -->|Unfavorable Context| D[NO TRADE - Wait]
-    
-    C --> E[Technical Score]
-    C --> F[Sentiment Score] 
-    C --> G[Risk Score]
-    
-    E --> H{Combined Score ≥ 7/10?}
-    F --> H
-    G --> H
-    
-    H -->|Yes| I{Position Correlation Check}
-    H -->|No| J[NO TRADE - Continue Monitoring]
-    
-    I -->|Low Correlation| K[Position Sizing]
-    I -->|High Correlation| L[NO TRADE - Wait for Diversification]
-    
-    K --> M{Risk Approval & Available Capital}
-    M -->|Approved| N[Order Execution]
-    M -->|Rejected| O[NO TRADE - Risk Override]
-    
-    N --> P[Position Monitoring Every 5min]
-    P --> Q{3:15 PM Approaching?}
-    Q -->|Yes| R[MANDATORY CLOSE ALL POSITIONS]
-    Q -->|No| S[Continue Monitoring]
-```
-
-## 🔧 **Configuration-Driven Architecture**
-
-### **Primary Config Structure:**
-
-```yaml
-# config/trading_config.yaml
-trading_strategy:
-  universe_stocks: ["RELIANCE", "TCS", "HDFC", "INFY", "ITC"]
-  capital: 10000
-  timeframe: "15min_to_4hr"
-  
-risk_management:
-  max_position_pct: 20
-  daily_loss_limit_pct: 3
-  max_daily_trades: 3
-  cooling_period_minutes: 60
-  eod_closure_time: "15:15"
-  min_signal_score: 7.0
-  
-market_context:
-  avoid_earnings_window_days: 1
-  avoid_event_window_hours: 2
-  min_volume_multiple: 1.5
-  max_correlation_threshold: 0.7
-  
-operational:
-  monitoring_frequency_minutes: 5
-  position_check_frequency_minutes: 1
-  daily_reset_time: "09:00"
-```
-
-## 💡 **Additional Strategic Considerations**
-
-### **1. Research Validation Metrics**
-
-- **Daily Win Rate**: Track per-day success
-- **Strategy Decay**: Monitor if edge diminishes over time
-- **Market Regime Performance**: How strategy performs in different conditions
-- **No-Trade Accuracy**: Were the avoided trades actually bad?
-
-### **2. Rapid Iteration Framework**
-
-- **Weekly Strategy Reviews**: What worked/didn't work
-- **Parameter Optimization**: A/B test different thresholds
-- **Market Adaptation**: Adjust based on changing market conditions
-
-### **3. Capital Allocation Research**
-
-- **Kelly Criterion**: Optimal position sizing based on win rate/payoff
-- **Volatility Targeting**: Adjust position size based on stock volatility
-- **Drawdown Management**: Reduce size after consecutive losses
-
-This research-focused approach will give you much faster validation cycles and cleaner data for analysis. The configuration-driven design lets you rapidly test different parameters without code changes!
