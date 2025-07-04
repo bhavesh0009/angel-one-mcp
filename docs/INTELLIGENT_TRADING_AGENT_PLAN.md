@@ -72,32 +72,31 @@ We are adopting a **hybrid model** that combines a structured, auditable workflo
 
 ```mermaid
 flowchart TD
-    A[Market Event/Signal] --> B{Market Context Check}
-    B -->|Favorable Context| C{Multi-Agent Analysis}
-    B -->|Unfavorable Context| D[NO TRADE - Wait]
-    
-    C --> E[Technical Score]
-    C --> F[Sentiment Score] 
-    C --> G[Risk Score]
-    
-    E --> H{Combined Score ≥ 7/10?}
-    F --> H
-    G --> H
-    
-    H -->|Yes| I{Position Correlation Check}
-    H -->|No| J[NO TRADE - Continue Monitoring]
-    
-    I -->|Low Correlation| K[Position Sizing]
-    I -->|High Correlation| L[NO TRADE - Wait for Diversification]
-    
-    K --> M{Risk Approval & Available Capital}
-    M -->|Approved| N[Order Execution]
-    M -->|Rejected| O[NO TRADE - Risk Override]
-    
-    N --> P[Position Monitoring Every 5min]
-    P --> Q{3:15 PM Approaching?}
-    Q -->|Yes| R[MANDATORY CLOSE ALL POSITIONS]
-    Q -->|No| S[Continue Monitoring]
+    subgraph "Trading Day Workflow"
+        A["Start of Day (9:00 AM)<br/>System & API Checks"] --> B["Pre-Market Analysis<br/>- News, Global Sentiment<br/>- Update Indicators"];
+        B --> C["Begin Continuous Monitoring Loop (9:15 AM)"];
+
+        subgraph "Market Hours Loop"
+            direction TB
+            C --> D{"Market Event or<br/>Periodic Signal?"};
+            D -- No --> E{"Is it >= 3:15 PM?"};
+            D -- Yes --> F["Run Multi-Agent Analysis"];
+            
+            subgraph "Decision Sub-Process"
+                F --> G{Market Context Check};
+                G -- Unfavorable --> C;
+                G -- Favorable --> H{Combined Score >= 7/10?};
+                H -- No --> C;
+                H -- Yes --> I{Position Correlation & Risk Check};
+                I -- Rejected --> C;
+                I -- Approved --> J["Execute & Monitor Trade"];
+                J --> C;
+            end
+        end
+
+        E -- Yes --> K["MANDATORY: Close All Positions"];
+        K --> L["End of Day (3:30 PM)<br/>Performance Analysis & Reporting"];
+    end
 ```
 
 ### **Agent Specialization**
