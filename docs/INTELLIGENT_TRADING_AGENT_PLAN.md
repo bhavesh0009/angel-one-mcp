@@ -135,10 +135,23 @@ workflow_agents:
 
 ### **Stock Universe (Phase 1)**
 
+The initial stock universe is **fully configurable**. The following list is a suggested starting point based on high liquidity and sector diversity.
+
+```yaml
+suggested_stocks:
+  - RELIANCE
+  - TCS
+  - HDFCBANK
+  - INFY
+  - ITC
+  - SBIN
+  - HCLTECH
+  - LT
+  - WIPRO
+  - MARUTI
 ```
-Initial 10 Stocks: RELIANCE, TCS, HDFC, INFY, ITC, SBIN, HCLTECH, LT, WIPRO, MARUTI
-Selection Criteria: High liquidity, diverse sectors, consistent volume, well-established companies
-```
+
+*Selection Criteria: High liquidity, diverse sectors, consistent volume, well-established companies.*
 
 ### **Technical Analysis Stack**
 
