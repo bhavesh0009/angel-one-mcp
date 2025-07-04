@@ -69,7 +69,7 @@ async def ensure_authenticated():
             if data['status']:
                 auth_token = data['data']['jwtToken']
                 refresh_token = data['data']['refreshToken']
-                feed_token = smart_api.getfeedToken()
+                smart_api.getfeedToken()
                 
                 # Remove 'Bearer ' prefix if present - Angel One API expects raw JWT
                 if auth_token.startswith('Bearer '):
@@ -96,7 +96,7 @@ async def ensure_authenticated():
     
     return True
 
-def handle_api_error(func_name: str, error: Exception) -> str:
+def handle_api_error(func_name: str, error: Exception) -> Dict[str, Any]:
     """Handle and format API errors with context"""
     error_context = {
         "function": func_name,
@@ -106,14 +106,14 @@ def handle_api_error(func_name: str, error: Exception) -> str:
     }
     
     logger.error(f"API Error in {func_name}: {error}")
-    return f"Error in {func_name}: {error_context}"
+    return {"error": error_context}
 
 # =============================================================================
 # AUTHENTICATION & PROFILE TOOLS
 # =============================================================================
 
 @mcp.tool()
-async def get_profile() -> str:
+async def get_profile() -> Dict[str, Any]:
     """Get user profile information including account details, segment access, and trading permissions.
     
     Use this when user asks about:
@@ -122,15 +122,19 @@ async def get_profile() -> str:
     - User profile details
     - Account status
     """
-    await ensure_authenticated()
-    return "User Profile: Authentication successful - Profile details available after API method signature is resolved"
+    try:
+        await ensure_authenticated()
+        profile = smart_api.getProfile(current_refresh_token)
+        return profile
+    except Exception as e:
+        return handle_api_error("get_profile", e)
 
 # =============================================================================
 # PORTFOLIO TOOLS  
 # =============================================================================
 
 @mcp.tool()
-async def get_holdings() -> str:
+async def get_holdings() -> Dict[str, Any]:
     """Get user's stock holdings and investment portfolio with current market values.
     
     Use this when user asks about:
@@ -143,12 +147,12 @@ async def get_holdings() -> str:
     try:
         await ensure_authenticated()
         holdings = smart_api.holding()
-        return f"Holdings: {holdings}"
+        return holdings
     except Exception as e:
         return handle_api_error("get_holdings", e)
 
 @mcp.tool()
-async def get_all_holdings() -> str:
+async def get_all_holdings() -> Dict[str, Any]:
     """Get comprehensive holdings including family accounts and consolidated portfolio view.
     
     Use this when user asks about:
@@ -160,12 +164,12 @@ async def get_all_holdings() -> str:
     try:
         await ensure_authenticated()
         all_holdings = smart_api.allholding()
-        return f"All Holdings: {all_holdings}"
+        return all_holdings
     except Exception as e:
         return handle_api_error("get_all_holdings", e)
 
 @mcp.tool()
-async def get_positions() -> str:
+async def get_positions() -> Dict[str, Any]:
     """Get user's current open trading positions (intraday and overnight positions).
     
     Use this when user asks about:
@@ -179,12 +183,12 @@ async def get_positions() -> str:
     try:
         await ensure_authenticated()
         positions = smart_api.position()
-        return f"Positions: {positions}"
+        return positions
     except Exception as e:
         return handle_api_error("get_positions", e)
 
 @mcp.tool()
-async def get_rms_limit() -> str:
+async def get_rms_limit() -> Dict[str, Any]:
     """Get Risk Management System limits including available margin, used margin, and buying power.
     
     Use this when user asks about:
@@ -198,7 +202,7 @@ async def get_rms_limit() -> str:
     try:
         await ensure_authenticated()
         rms_limit = smart_api.rmsLimit()
-        return f"RMS Limits: {rms_limit}"
+        return rms_limit
     except Exception as e:
         return handle_api_error("get_rms_limit", e)
 
@@ -220,7 +224,7 @@ async def place_order(
     quantity: str,
     squareoff: str = "0",
     stoploss: str = "0"
-) -> str:
+) -> Dict[str, Any]:
     """Place a buy or sell trading order in the market.
     
     Use this when user wants to:
@@ -251,7 +255,7 @@ async def place_order(
         
         # Safety check
         if int(quantity) > MAX_ORDER_QUANTITY:
-            return f"Error: Order quantity {quantity} exceeds maximum allowed {MAX_ORDER_QUANTITY}"
+            return {"error": f"Order quantity {quantity} exceeds maximum allowed {MAX_ORDER_QUANTITY}"}
         
         order_params = {
             "variety": variety,
@@ -269,10 +273,12 @@ async def place_order(
         }
         
         if DRY_RUN_MODE:
-            return f"DRY RUN - Order would be placed with params: {order_params}"
+            return {"status": "dry_run", "message": "Order would be placed", "params": order_params}
         
-        order_id = smart_api.placeOrder(order_params)
-        return f"Order placed successfully. Order ID: {order_id}"
+        response = smart_api.placeOrder(order_params)
+        if isinstance(response, str):
+            return {"status": "success", "order_id": response}
+        return response
         
     except Exception as e:
         return handle_api_error("place_order", e)
@@ -290,7 +296,7 @@ async def modify_order(
     duration: str,
     price: str,
     quantity: str
-) -> str:
+) -> Dict[str, Any]:
     """Modify an existing order
     
     Args:
@@ -324,16 +330,16 @@ async def modify_order(
         }
         
         if DRY_RUN_MODE:
-            return f"DRY RUN - Order would be modified with params: {modify_params}"
+            return {"status": "dry_run", "message": "Order would be modified", "params": modify_params}
         
         response = smart_api.modifyOrder(modify_params)
-        return f"Order modified successfully: {response}"
+        return response
         
     except Exception as e:
         return handle_api_error("modify_order", e)
 
 @mcp.tool()
-async def cancel_order(order_id: str, variety: str) -> str:
+async def cancel_order(order_id: str, variety: str) -> Dict[str, Any]:
     """Cancel an existing order
     
     Args:
@@ -344,16 +350,16 @@ async def cancel_order(order_id: str, variety: str) -> str:
         await ensure_authenticated()
         
         if DRY_RUN_MODE:
-            return f"DRY RUN - Order {order_id} would be cancelled"
+            return {"status": "dry_run", "message": f"Order {order_id} would be cancelled"}
         
         response = smart_api.cancelOrder(order_id=order_id, variety=variety)
-        return f"Order cancelled successfully: {response}"
+        return response
         
     except Exception as e:
         return handle_api_error("cancel_order", e)
 
 @mcp.tool()
-async def get_order_book() -> str:
+async def get_order_book() -> Dict[str, Any]:
     """Get complete order book showing all placed orders with their current status.
     
     Use this when user asks about:
@@ -368,12 +374,12 @@ async def get_order_book() -> str:
     try:
         await ensure_authenticated()
         order_book = smart_api.orderBook()
-        return f"Order Book: {order_book}"
+        return order_book
     except Exception as e:
         return handle_api_error("get_order_book", e)
 
 @mcp.tool()
-async def get_trade_book() -> str:
+async def get_trade_book() -> Dict[str, Any]:
     """Get trade book showing all executed trades with transaction details and P&L.
     
     Use this when user asks about:
@@ -387,7 +393,7 @@ async def get_trade_book() -> str:
     try:
         await ensure_authenticated()
         trade_book = smart_api.tradeBook()
-        return f"Trade Book: {trade_book}"
+        return trade_book
     except Exception as e:
         return handle_api_error("get_trade_book", e)
 
@@ -396,7 +402,7 @@ async def get_trade_book() -> str:
 # =============================================================================
 
 @mcp.tool()
-async def get_ltp_data(exchange: str, tradingsymbol: str, symboltoken: str) -> str:
+async def get_ltp_data(exchange: str, tradingsymbol: str, symboltoken: str) -> Dict[str, Any]:
     """Get real-time Last Traded Price (LTP) and basic market data for a specific stock/instrument.
     
     Use this when user asks about:
@@ -414,7 +420,7 @@ async def get_ltp_data(exchange: str, tradingsymbol: str, symboltoken: str) -> s
     try:
         await ensure_authenticated()
         ltp_data = smart_api.ltpData(exchange, tradingsymbol, symboltoken)
-        return f"LTP Data: {ltp_data}"
+        return ltp_data
     except Exception as e:
         return handle_api_error("get_ltp_data", e)
 
@@ -425,7 +431,7 @@ async def get_candle_data(
     interval: str,
     fromdate: str,
     todate: str
-) -> str:
+) -> Dict[str, Any]:
     """Get historical candlestick (OHLC) data for technical analysis and charting.
     
     Use this when user asks about:
@@ -456,13 +462,13 @@ async def get_candle_data(
         }
         
         candle_data = smart_api.getCandleData(historic_params)
-        return f"Candle Data: {candle_data}"
+        return candle_data
         
     except Exception as e:
         return handle_api_error("get_candle_data", e)
 
 @mcp.tool()
-async def search_scrip(exchange: str, searchscrip: str) -> str:
+async def search_scrip(exchange: str, searchscrip: str) -> Dict[str, Any]:
     """Search for stocks, indices, or instruments to get their trading details and symbol tokens.
     
     Use this when user asks about:
@@ -482,7 +488,7 @@ async def search_scrip(exchange: str, searchscrip: str) -> str:
     try:
         await ensure_authenticated()
         response = smart_api.searchScrip(exchange=exchange, searchscrip=searchscrip)
-        return f"Search Results: {response}"
+        return response
     except Exception as e:
         return handle_api_error("search_scrip", e)
 
@@ -502,7 +508,7 @@ async def create_gtt_rule(
     disclosedqty: int,
     triggerprice: float,
     timeperiod: int
-) -> str:
+) -> Dict[str, Any]:
     """Create a GTT (Good Till Triggered) rule for automated trading when price conditions are met.
     
     Use this when user wants to:
@@ -548,16 +554,18 @@ async def create_gtt_rule(
         }
         
         if DRY_RUN_MODE:
-            return f"DRY RUN - GTT rule would be created with params: {gtt_params}"
+            return {"status": "dry_run", "message": "GTT rule would be created", "params": gtt_params}
         
         rule_id = smart_api.gttCreateRule(gtt_params)
-        return f"GTT rule created successfully. Rule ID: {rule_id}"
+        if isinstance(rule_id, str):
+            return {"status": "success", "rule_id": rule_id}
+        return rule_id
         
     except Exception as e:
         return handle_api_error("create_gtt_rule", e)
 
 @mcp.tool()
-async def get_gtt_list(status: List[str], page: int = 1, count: int = 10) -> str:
+async def get_gtt_list(status: List[str], page: int = 1, count: int = 10) -> Dict[str, Any]:
     """Get list of GTT rules
     
     Args:
@@ -568,7 +576,7 @@ async def get_gtt_list(status: List[str], page: int = 1, count: int = 10) -> str
     try:
         await ensure_authenticated()
         gtt_list = smart_api.gttLists(status=status, page=page, count=count)
-        return f"GTT Rule List: {gtt_list}"
+        return gtt_list
     except Exception as e:
         return handle_api_error("get_gtt_list", e)
 
@@ -577,7 +585,7 @@ async def get_gtt_list(status: List[str], page: int = 1, count: int = 10) -> str
 # =============================================================================
 
 @mcp.tool()
-async def get_option_greek(name: str, expirydate: str) -> str:
+async def get_option_greek(name: str, expirydate: str) -> Dict[str, Any]:
     """Get option Greeks for an underlying
     
     Args:
@@ -593,13 +601,13 @@ async def get_option_greek(name: str, expirydate: str) -> str:
         }
         
         greeks = smart_api.optionGreek(greek_params)
-        return f"Option Greeks: {greeks}"
+        return greeks
         
     except Exception as e:
         return handle_api_error("get_option_greek", e)
 
 @mcp.tool()
-async def get_gainers_losers(datatype: str, expirytype: str = "NEAR") -> str:
+async def get_gainers_losers(datatype: str, expirytype: str = "NEAR") -> Dict[str, Any]:
     """Get top gainers, losers, or high OI (Open Interest) stocks for market analysis.
     
     Use this when user asks about:
@@ -624,13 +632,13 @@ async def get_gainers_losers(datatype: str, expirytype: str = "NEAR") -> str:
         }
         
         gainers_losers = smart_api.gainersLosers(gl_params)
-        return f"Gainers/Losers: {gainers_losers}"
+        return gainers_losers
         
     except Exception as e:
         return handle_api_error("get_gainers_losers", e)
 
 @mcp.tool()
-async def get_put_call_ratio() -> str:
+async def get_put_call_ratio() -> Dict[str, Any]:
     """Get Put-Call Ratio (PCR) - a key market sentiment indicator.
     
     Use this when user asks about:
@@ -649,7 +657,7 @@ async def get_put_call_ratio() -> str:
     try:
         await ensure_authenticated()
         pcr = smart_api.putCallRatio()
-        return f"Put-Call Ratio: {pcr}"
+        return pcr
     except Exception as e:
         return handle_api_error("get_put_call_ratio", e)
 
@@ -666,7 +674,7 @@ async def convert_position(
     transactiontype: str,
     quantity: int,
     type: str
-) -> str:
+) -> Dict[str, Any]:
     """Convert position from one product type to another
     
     Args:
@@ -692,16 +700,16 @@ async def convert_position(
         }
         
         if DRY_RUN_MODE:
-            return f"DRY RUN - Position would be converted with params: {position_params}"
+            return {"status": "dry_run", "message": "Position would be converted", "params": position_params}
         
         response = smart_api.convertPosition(position_params)
-        return f"Position conversion response: {response}"
+        return response
         
     except Exception as e:
         return handle_api_error("convert_position", e)
 
 @mcp.tool()
-async def estimate_charges(orders: List[Dict[str, Any]]) -> str:
+async def estimate_charges(orders: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Estimate brokerage and charges for trades
     
     Args:
@@ -712,7 +720,7 @@ async def estimate_charges(orders: List[Dict[str, Any]]) -> str:
         
         charge_params = {"orders": orders}
         charges = smart_api.estimateCharges(charge_params)
-        return f"Estimated charges: {charges}"
+        return charges
         
     except Exception as e:
         return handle_api_error("estimate_charges", e)
