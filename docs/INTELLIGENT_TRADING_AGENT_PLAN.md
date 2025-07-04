@@ -62,13 +62,13 @@ graph TD
 
 ---
 
-## 🔄 **Architectural Approach: Workflow vs Pure Agentic**
+## 🔄 **Architectural Approach: Hybrid Workflow-Agentic Model**
 
-### **Chosen Approach: Orchestrated Workflow with Specialized Agents**
+### **Our Hybrid Approach**
 
-For this research project, we're using a **workflow-based architecture** rather than a pure agentic approach. Here's why:
+We are adopting a **hybrid model** that combines a structured, auditable workflow with the flexibility of specialized agents. This approach gives us the best of both worlds: the determinism needed for risk management and trade execution, coupled with the adaptability of agents for complex analysis tasks like market research and news sentiment.
 
-#### **Workflow Architecture Benefits for Trading Research:**
+### **Core Workflow Structure**
 
 ```mermaid
 graph TD
@@ -85,18 +85,7 @@ graph TD
     K --> L[Monitor Position]
 ```
 
-#### **Why Workflow > Pure Agentic for Research:**
-
-| Research Need | Workflow Advantage | Pure Agentic Challenge |
-|---------------|-------------------|----------------------|
-| **Decision Audit** | Clear step-by-step trace | Emergent, hard to explain |
-| **Risk Control** | Deterministic safety checks | Unpredictable agent behavior |
-| **Parameter Testing** | Isolated component testing | Complex interdependencies |
-| **Debugging** | Single failure point identification | Distributed failure analysis |
-| **Compliance** | Predictable decision paths | Non-deterministic outcomes |
-| **Rapid Iteration** | Modify specific workflow steps | Complex agent interaction changes |
-
-#### **Agent Specialization in Workflow:**
+### **Agent Specialization**
 
 ```yaml
 workflow_agents:
@@ -124,52 +113,6 @@ workflow_agents:
     responsibility: "Coordinate workflow, make final decisions"
     inputs: "All agent outputs"
     outputs: "Final trade decision, execution instructions"
-```
-
-#### **Workflow Decision Process:**
-
-```python
-# Simplified workflow logic
-def trading_decision_workflow(market_event):
-    # Step 1: Market Context
-    market_score = market_context_agent.analyze(market_event)
-    if market_score < 4:  # Unfavorable market
-        return "NO_TRADE", "Poor market conditions"
-    
-    # Step 2: Technical Analysis
-    tech_score = technical_agent.analyze(market_event.symbol)
-    
-    # Step 3: News Sentiment
-    news_score = news_agent.analyze(market_event.symbol)
-    
-    # Step 4: Combined Scoring
-    combined_score = (
-        market_score * 0.3 + 
-        tech_score * 0.4 + 
-        news_score * 0.3
-    )
-    
-    if combined_score < 7.0:
-        return "NO_TRADE", f"Combined score {combined_score} below threshold"
-    
-    # Step 5: Risk Management
-    risk_approval = risk_agent.evaluate(combined_score, market_event.symbol)
-    if not risk_approval.approved:
-        return "NO_TRADE", risk_approval.reason
-    
-    # Step 6: Execute
-    return "EXECUTE", risk_approval.position_size
-```
-
-### **Future Evolution Path:**
-
-**Phase 1-3**: Workflow approach for research validation
-**Phase 4+**: Consider hybrid approach with limited agent autonomy in specific areas
-
-```mermaid
-graph LR
-    A[Current: Pure Workflow] --> B[Hybrid: Workflow + Limited Autonomy]
-    B --> C[Future: More Agentic with Constraints]
 ```
 
 ---
