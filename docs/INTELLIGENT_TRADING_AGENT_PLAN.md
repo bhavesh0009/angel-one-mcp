@@ -68,21 +68,36 @@ graph TD
 
 We are adopting a **hybrid model** that combines a structured, auditable workflow with the flexibility of specialized agents. This approach gives us the best of both worlds: the determinism needed for risk management and trade execution, coupled with the adaptability of agents for complex analysis tasks like market research and news sentiment.
 
-### **Core Workflow Structure**
+### **Core Decision Workflow**
 
 ```mermaid
-graph TD
-    A[Market Data Event] --> B[Orchestrator]
-    B --> C[Market Context Agent]
-    C --> D[Technical Analysis Agent]
-    D --> E[News Sentiment Agent]
-    E --> F[Risk Management Agent]
-    F --> G[Decision Scoring & Validation]
-    G --> H{Score ≥ 7/10?}
-    H -->|Yes| I[Position Sizing]
-    H -->|No| J[No Trade - Log Reason]
-    I --> K[Execute Trade]
-    K --> L[Monitor Position]
+flowchart TD
+    A[Market Event/Signal] --> B{Market Context Check}
+    B -->|Favorable Context| C{Multi-Agent Analysis}
+    B -->|Unfavorable Context| D[NO TRADE - Wait]
+    
+    C --> E[Technical Score]
+    C --> F[Sentiment Score] 
+    C --> G[Risk Score]
+    
+    E --> H{Combined Score ≥ 7/10?}
+    F --> H
+    G --> H
+    
+    H -->|Yes| I{Position Correlation Check}
+    H -->|No| J[NO TRADE - Continue Monitoring]
+    
+    I -->|Low Correlation| K[Position Sizing]
+    I -->|High Correlation| L[NO TRADE - Wait for Diversification]
+    
+    K --> M{Risk Approval & Available Capital}
+    M -->|Approved| N[Order Execution]
+    M -->|Rejected| O[NO TRADE - Risk Override]
+    
+    N --> P[Position Monitoring Every 5min]
+    P --> Q{3:15 PM Approaching?}
+    Q -->|Yes| R[MANDATORY CLOSE ALL POSITIONS]
+    Q -->|No| S[Continue Monitoring]
 ```
 
 ### **Agent Specialization**
@@ -315,35 +330,12 @@ trade_adjustments:
 
 ### **Decision Making Process**
 
-```mermaid
-flowchart TD
-    A[Market Event/Signal] --> B{Market Context Check}
-    B -->|Favorable Context| C{Multi-Agent Analysis}
-    B -->|Unfavorable Context| D[NO TRADE - Wait]
-    
-    C --> E[Technical Score]
-    C --> F[Sentiment Score] 
-    C --> G[Risk Score]
-    
-    E --> H{Combined Score ≥ 7/10?}
-    F --> H
-    G --> H
-    
-    H -->|Yes| I{Position Correlation Check}
-    H -->|No| J[NO TRADE - Continue Monitoring]
-    
-    I -->|Low Correlation| K[Position Sizing]
-    I -->|High Correlation| L[NO TRADE - Wait for Diversification]
-    
-    K --> M{Risk Approval & Available Capital}
-    M -->|Approved| N[Order Execution]
-    M -->|Rejected| O[NO TRADE - Risk Override]
-    
-    N --> P[Position Monitoring Every 5min]
-    P --> Q{3:15 PM Approaching?}
-    Q -->|Yes| R[MANDATORY CLOSE ALL POSITIONS]
-    Q -->|No| S[Continue Monitoring]
-```
+The decision-making logic is visually represented in the "Core Decision Workflow" diagram under the **Architectural Approach** section. This workflow integrates multi-agent analysis with strict risk management checks to arrive at a final trade decision. The key stages include:
+
+1. **Market Context Analysis**: Assessing overall market conditions before considering any trade.
+2. **Multi-Agent Scoring**: Combining technical, sentiment, and risk scores.
+3. **Correlation & Risk Approval**: Ensuring new positions are diversified and within capital limits.
+4. **Execution & Monitoring**: Placing the trade and continuously monitoring it until the end-of-day closure.
 
 ---
 
